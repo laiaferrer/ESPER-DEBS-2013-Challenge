@@ -1,0 +1,156 @@
+package com.example;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.RunningStatistics;
+import com.espertech.esper.client.*;
+
+
+public class EventSender {
+
+    public static final Map<String, RunningStatistics> RunningStatisticsMap = new HashMap<>();
+    public static void main(String[] args) {
+        // Create an Esper Configuration
+        Configuration config = new Configuration();
+        config.addEventType("SensorEvent", SensorEvent.class.getName());
+
+        // Create an Esper runtime
+        EPServiceProvider epService = EPServiceProviderManager.getDefaultProvider(config);
+
+        // Register the listener
+        EPLProcessor processor = new EPLProcessor(epService.getEPAdministrator());
+        processor.startListening(epService);
+
+        // Get an event runtime
+        EPRuntime runtime = epService.getEPRuntime();
+
+        // EPL Query for Streaming Join
+        String eplQuery = "select sid, ts, player_id, team_id, intensity " +
+                          "from SensorEvent";
+
+        EPStatement statement = epService.getEPAdministrator().createEPL(eplQuery);
+
+        statement.addListener(new UpdateListener() {
+            public void update(EventBean[] newEvents, EventBean[] oldEvents) {
+                if (newEvents != null) {
+                    for (EventBean event : newEvents) {
+                        /*System.out.println("Sensor ID: " + event.get("sid") +
+                                           ", Timestamp: " + event.get("ts") +
+                                           ", Player: " + event.get("player_id") +
+                                           ", Team: " + event.get("team_id") +
+                                           ", Intensity: " + event.get("intensity"));*/
+                    }
+                }
+            }
+        });
+
+        // Read metadata
+        Map<String, PlayerData> metadata = readMetadata("metadata.txt");
+
+        //create Running Statistics all initialized to 0
+        for (PlayerData player : metadata.values()) {
+            String playerId = player.getPlayerName(); // You might have a getter for playerId in PlayerData class
+            new RunningStatistics(0, playerId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+        
+        for (PlayerData player : metadata.values()) {
+            // Assuming player IDs are integers, otherwise modify accordingly
+            String playerId = player.getPlayerName(); // You might have a getter for playerId in PlayerData class
+            RunningStatistics stats = new RunningStatistics(0, playerId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            RunningStatisticsMap.put(playerId, stats);
+        }
+
+        // Stream sensor data
+        streamSensorData("data1.txt", metadata, runtime, epService);
+
+        RunningStatisticsMap.clear();
+    }
+
+    private static Map<String, PlayerData> readMetadata(String filePath) {
+        Map<String, PlayerData> metadata = new HashMap<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            String team = "";
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.startsWith("teamA") || line.startsWith("teamB")) {
+                    team = line.split(":")[0].trim();  // Capture the team name
+                } else if (line.contains(",")) {
+                    String[] parts = line.split(",");
+                    String playerName = parts[0].trim();
+                    List<Integer> sensorIds = new ArrayList<>();
+                    for (int i = 1; i < parts.length; i++) {
+                        sensorIds.add(Integer.parseInt(parts[i].trim()));
+                    }
+                    metadata.put(playerName, new PlayerData(playerName, team, sensorIds));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return metadata;
+    }
+
+    private static void streamSensorData(String filePath, Map<String, PlayerData> metadata, EPRuntime runtime, EPServiceProvider epService) {
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                String sid = parts[0].trim();
+                long ts = Long.parseLong(parts[1].trim());
+                double x = Double.parseDouble(parts[2].trim());
+                double y = Double.parseDouble(parts[3].trim());
+                double z = Double.parseDouble(parts[4].trim());
+                double v = Double.parseDouble(parts[5].trim());
+                double a = Double.parseDouble(parts[6].trim());
+                double vx = Double.parseDouble(parts[7].trim());
+                double vy = Double.parseDouble(parts[8].trim());
+                double vz = Double.parseDouble(parts[9].trim());
+                double ax = Double.parseDouble(parts[10].trim());
+                double ay = Double.parseDouble(parts[11].trim());
+                double az = Double.parseDouble(parts[12].trim());
+
+                SensorEvent event = new SensorEvent(sid, ts, x, y, z, v, a, vx, vy, vz, ax, ay, az);
+
+                // Assign player and team based on sid
+                for (Map.Entry<String, PlayerData> entry : metadata.entrySet()) {
+                    PlayerData playerData = entry.getValue();
+                    if (playerData.getSensorIds().contains(Integer.parseInt(sid))) {
+                        event.setPlayer_id(playerData.getPlayerName());
+                        event.setTeam_id(playerData.getTeamName());
+                        break;  // Stop looping once found
+                    }
+                }
+
+                // Set intensity based on speed (v)
+                event.setintensity(determineIntensity(v));
+
+                System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
+                
+                                
+                // Send event to Esper as a **stream**
+                epService.getEPRuntime().sendEvent(event);
+
+                //System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String determineIntensity(double v) {
+        if (v <= 277778) return "standing";
+        else if (v <= 3055558) return "trot";
+        else if (v <= 3888892) return "low_speed_run";
+        else if (v <= 4722226) return "medium_speed_run";
+        else if (v <= 5555560) return "high_speed_run";
+        else return "sprint";
+    }
+}
