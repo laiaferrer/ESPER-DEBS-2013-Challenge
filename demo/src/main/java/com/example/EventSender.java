@@ -15,6 +15,8 @@ import com.espertech.esper.client.*;
 public class EventSender {
 
     public static final Map<String, RunningStatistics> RunningStatisticsMap = new HashMap<>();
+    public static final Map<String, SensorEvent> PlayerPosition = new HashMap<>();
+
     public static void main(String[] args) {
         // Create an Esper Configuration
         Configuration config = new Configuration();
@@ -26,6 +28,10 @@ public class EventSender {
         // Register the listener
         EPLProcessor processor = new EPLProcessor(epService.getEPAdministrator());
         processor.startListening(epService);
+
+        //Register another listener
+        Query2 query2 = new Query2(epService.getEPAdministrator());
+        query2.startListening(epService);
 
         // Get an event runtime
         EPRuntime runtime = epService.getEPRuntime();
@@ -53,23 +59,28 @@ public class EventSender {
         // Read metadata
         Map<String, PlayerData> metadata = readMetadata("metadata.txt");
 
-        //create Running Statistics all initialized to 0
+                
         for (PlayerData player : metadata.values()) {
-            String playerId = player.getPlayerName(); // You might have a getter for playerId in PlayerData class
-            new RunningStatistics(0, playerId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        }
-        
-        for (PlayerData player : metadata.values()) {
-            // Assuming player IDs are integers, otherwise modify accordingly
             String playerId = player.getPlayerName(); // You might have a getter for playerId in PlayerData class
             RunningStatistics stats = new RunningStatistics(0, playerId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             RunningStatisticsMap.put(playerId, stats);
+            //System.out.println("Stored RunningStatistics for player: " + playerId + " -> " + stats);
         }
+
+        for (PlayerData player : metadata.values()) {
+            String playerId = player.getPlayerName(); // You might have a getter for playerId in PlayerData class
+            SensorEvent stats = new SensorEvent("0", 0L, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);;
+            stats.setPlayer_id(playerId);
+            PlayerPosition.put(playerId, stats);
+            //System.out.println("Stored PlayerPostition for player: " + playerId + " -> " + stats);
+        }
+        
 
         // Stream sensor data
         streamSensorData("data1.txt", metadata, runtime, epService);
 
         RunningStatisticsMap.clear();
+        PlayerPosition.clear();
     }
 
     private static Map<String, PlayerData> readMetadata(String filePath) {
@@ -84,6 +95,11 @@ public class EventSender {
                 } else if (line.contains(",")) {
                     String[] parts = line.split(",");
                     String playerName = parts[0].trim();
+
+                    if (playerName.equalsIgnoreCase("ball: 4") || playerName.toLowerCase().contains("referee")) {
+                        continue;
+                    }
+
                     List<Integer> sensorIds = new ArrayList<>();
                     for (int i = 1; i < parts.length; i++) {
                         sensorIds.add(Integer.parseInt(parts[i].trim()));
@@ -134,9 +150,21 @@ public class EventSender {
 
                 System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
                 
-                                
                 // Send event to Esper as a **stream**
                 epService.getEPRuntime().sendEvent(event);
+
+                //if it is the event that will terminate the context resend it so that it can initialize another context
+                String i =  PlayerPosition.get(event.getPlayer_id()).getintensity();
+                //System.out.println("Previous intensity: " + i + " Actual intensity: "+ event.getintensity());
+                if(event.getintensity() != i && i != "") {
+                    System.out.println("Repeated Event sent: " + event.getSid() + ", " + event.getTs() + 1 + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
+                    //event.setTs(event.getTs() + 1);
+                    epService.getEPRuntime().sendEvent(event);
+                }
+
+
+                //update the position of the player
+                PlayerPosition.put(event.getPlayer_id(), event);
 
                 //System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
             }

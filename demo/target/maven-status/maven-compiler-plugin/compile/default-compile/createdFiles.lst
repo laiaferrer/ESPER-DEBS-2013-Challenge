@@ -1,9 +1,10 @@
+com/example/BallPossessionPlayer.class
 com/example/ProcessedEvent.class
+com/example/BallPossessionTeam.class
 com/example/SensorEvent.class
 com/example/not_used/SimpleEsperExample.class
 com/example/not_used/SimpleEsperExample$MyListener.class
 com/example/not_used/SensorJoin.class
-com/example/Query1_2.class
 com/example/not_used/Query1.class
 com/example/not_used/SimpleEsperExample$ProductEvent.class
 com/example/EventSender.class
@@ -12,4 +13,6 @@ com/example/EPLProcessor.class
 com/example/EventSender$1.class
 com/example/PlayerData.class
 com/example/Main.class
+com/example/Query2.class
 com/example/not_used/CurrentRunningStatistics.class
+com/example/ClosestPlayerUtils.class

@@ -49,6 +49,10 @@ public class SensorEvent {
         return ts;
     }
 
+    public void setTs(long ts) {
+        this.ts = ts;
+    }
+
     public double getX() {
         return x;
     }

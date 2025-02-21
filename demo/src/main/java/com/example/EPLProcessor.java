@@ -4,6 +4,8 @@ import com.RunningStatistics;
 import com.espertech.esper.client.*;
 import com.example.EventSender;
 
+//this code solves Query 1
+
 public class EPLProcessor {
     private EPAdministrator admin;
 
@@ -13,11 +15,13 @@ public class EPLProcessor {
 
     public void startListening(EPServiceProvider epService) {
 
+
         String contextEPL = "create context IntensityContext " +
                             "partition by player_id from SensorEvent " +
                             "initiated by SensorEvent as a " +
-                            "terminated by SensorEvent(intensity != a.intensity and player_id = a.player_id)";
-        
+                            "terminated by SensorEvent(intensity != a.intensity)";
+
+            
         /*String eplQuery = "select " +
                             "  a.ts as ts_start, " +
                             "  b.ts as ts_stop, " +
@@ -46,19 +50,28 @@ public class EPLProcessor {
         epService.getEPAdministrator().createEPL(contextEPL);
 
         EPStatement statement = admin.createEPL(eplQuery);
-        
+                
         statement.addListener((newData, oldData) -> {
             if (newData != null) {
                 for (EventBean event : newData) {
                     //System.out.println("Run Segment: ");
                     
-                    System.out.println("Run Segment: " +
-                            "Start: " + event.get("ts_start") + ", " +
-                            "Stop: " + event.get("ts_stop") + ", " +
-                            "Player: " + event.get("player_id") + ", " +
-                            "Intensity: " + event.get("intensity") + ", " +
-                            "Distance: " + event.get("distance") + " mm, " +
-                            "Avg Speed: " + event.get("speed") + " μm/s");
+                    System.out.printf(
+                        "Run Segment:%n" +
+                        "-----------------------------%n" +
+                        "Start:      %s%n" +
+                        "Stop:       %s%n" +
+                        "Player:     %s%n" +
+                        "Intensity:  %s%n" +
+                        "Distance:   %s mm%n" +
+                        "Avg Speed:  %s μm/s%n%n",
+                        event.get("ts_start"),
+                        event.get("ts_stop"),
+                        event.get("player_id"),
+                        event.get("intensity"),
+                        event.get("distance"),
+                        event.get("speed")
+                    );
 
                     RunningStatistics stats = EventSender.RunningStatisticsMap.get(event.get("player_id"));
                     String intensity = (String) event.get("intensity");  
@@ -112,13 +125,30 @@ public class EPLProcessor {
                             break;
                     }
 
-                    System.out.println( "Updated Running Statistics for Player " + stats.getPlayer_id() + ": " +
-                                        "Standing Time: " + stats.getStanding_time() + " picoseconds, Standing Distance: " + stats.getStanding_distance() + " mm, " +
-                                        "Trot Time: " + stats.getTrot_time() + " picoseconds, Trot Distance: " + stats.getTrot_distance() + " mm, " +
-                                        "Low Speed Run Time: " + stats.getLow_time() + " picoseconds, Low Speed Run Distance: " + stats.getLow_distance() + " mm, " +
-                                        "Medium Speed Run Time: " + stats.getMedium_time() + " picoseconds, Medium Speed Run Distance: " + stats.getMedium_distance() + " mm, " +
-                                        "High Speed Run Time: " + stats.getHigh_time() + " picoseconds, High Speed Run Distance: " + stats.getHigh_distance() + " mm, " +
-                                        "Sprint Time: " + stats.getSprint_time() + " picoseconds, Sprint Distance: " + stats.getSprint_distance() + " mm");
+                    System.out.printf(
+                        "Updated Running Statistics for Player %s:%n" +
+                        "-----------------------------------------------------%n" +
+                        "Standing Time:        %s picoseconds%n" +
+                        "Standing Distance:    %s mm%n" +
+                        "Trot Time:           %s picoseconds%n" +
+                        "Trot Distance:       %s mm%n" +
+                        "Low Speed Run Time:   %s picoseconds%n" +
+                        "Low Speed Run Dist.:  %s mm%n" +
+                        "Medium Speed Run Time:%s picoseconds%n" +
+                        "Medium Speed Run Dist:%s mm%n" +
+                        "High Speed Run Time:  %s picoseconds%n" +
+                        "High Speed Run Dist.: %s mm%n" +
+                        "Sprint Time:         %s picoseconds%n" +
+                        "Sprint Distance:     %s mm%n%n",
+                        stats.getPlayer_id(),
+                        stats.getStanding_time(), stats.getStanding_distance(),
+                        stats.getTrot_time(), stats.getTrot_distance(),
+                        stats.getLow_time(), stats.getLow_distance(),
+                        stats.getMedium_time(), stats.getMedium_distance(),
+                        stats.getHigh_time(), stats.getHigh_distance(),
+                        stats.getSprint_time(), stats.getSprint_distance()
+                    );
+
                     
                 }
             }
