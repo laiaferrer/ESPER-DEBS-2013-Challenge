@@ -140,6 +140,8 @@ public class EventSender {
 
     private static void streamSensorData(String filePath, Map<String, PlayerData> metadata, EPRuntime runtime, EPServiceProvider epService) {
         
+        long startTime = System.nanoTime();
+
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -167,7 +169,7 @@ public class EventSender {
                     
                     if (inside_court(x, y)) {
                         BallEvent event = new BallEvent(sid, ts, x, y, z, v, a, vx, vy, vz, ax, ay, az);
-                        System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + " x: " + event.getX() + " y: " + event.getY());
+                        //System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + " x: " + event.getX() + " y: " + event.getY());
                         
                         // Send event to Esper as a **stream**
                         epService.getEPRuntime().sendEvent(event);
@@ -189,7 +191,7 @@ public class EventSender {
                         // Set intensity based on speed (v)
                         event.setintensity(determineIntensity(v));
 
-                        System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity() + " x: " + event.getX() + " y: " + event.getY());
+                        //System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity() + " x: " + event.getX() + " y: " + event.getY());
                         
                         // Send event to Esper as a **stream**
                         epService.getEPRuntime().sendEvent(event);
@@ -198,7 +200,7 @@ public class EventSender {
                         String i =  PlayerPosition.get(event.getPlayer_id()).getintensity();
                         //System.out.println("Previous intensity: " + i + " Actual intensity: "+ event.getintensity());
                         if(event.getintensity() != i && i != "") {
-                            System.out.println("Repeated Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
+                            //System.out.println("Repeated Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
                             //event.setTs(event.getTs() + 1);
                             epService.getEPRuntime().sendEvent(event);
                         }
@@ -215,6 +217,14 @@ public class EventSender {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        long endTime = System.nanoTime(); // End measuring time
+        double duration = (endTime - startTime) / 1_000_000_000.0; // Convert to sec
+
+        System.out.println("----------------------------");
+        System.out.println("File Read Execution Time:");
+        System.out.printf("Duration: %.6f seconds%n", duration);
+        System.out.println("----------------------------");
     }
 
     private static String determineIntensity(double v) {

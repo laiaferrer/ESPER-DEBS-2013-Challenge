@@ -37,16 +37,6 @@ public class Query2 {
 
         admin.createEPL(insertBallEvents);
 
-
-        //String createPlayersWindow = "create window Players.std:unique(sid) as SensorEvent";
-
-        //admin.createEPL(createPlayersWindow);
-
-        /*String insertPlayers = "insert into Players " +
-                               "select * from SensorEvent " + 
-                               "where sid NOT IN ('4', '8', '10', '12')";
-
-        admin.createEPL(insertPlayers);*/
         
         String detectAndPredictShot =   "select b.sid as sid, p.ts as ts, p.player_id as player_id, b.x as x, b.y as y, b.z as z, b.v as v, b.vx as vx, b.vy as vy, b.vz as vz, b.a as a, b.ax as ax, b.ay as ay, b.az as az, p.team_id as team_id " +
                                         "from Players p, NotHitLastBallEvent b " +
@@ -89,38 +79,44 @@ public class Query2 {
             }
         });
 
-        /*epService = UDFRegistration.registerUDF(); // Ensure UDF is registered
-        this.admin = epService.getEPAdministrator(); // Update the admin instance*/
+        //to stop the possession if the ball goes off court
+        String offCourt =   "select b.sid as sid, b.ts as ts, b.x as x, b.y as y, b.z as z, b.v as v, b.vx as vx, b.vy as vy, b.vz as vz, b.a as a, b.ax as ax, b.ay as ay, b.az as az " +
+                            "from NotHitLastBallEvent b " +
+                            "where b.x  < 0 or b.x > 33941 or b.y > 33965 or b.y < -33960 ";
 
-        /*String contextEPL = "create context BallPossessionContext " +
-                            "initiated by SensorEvent(com.example.ClosestPlayerUtils.getDistance(x, y, z) < 1) as startEvent " +
-                            "terminated by SensorEvent(com.example.ClosestPlayerUtils.getDistance(x, y, z) < 1 AND playerId != startEvent.playerId) as endEvent " ;*/
+        EPStatement statement2 = admin.createEPL(offCourt);
 
-
-        //sid NOT IN ('4', '8', '10', '12') AND a > 55 AND
-        //OR GameEvent(eventType = 'OUT_OF_BOUNDS') 
-        //OR GameEvent(eventType = 'STOP');
-
-        //epService.getEPAdministrator().createEPL(contextEPL);
-
-        // Define another EPL query, for example, detecting sudden speed changes
-        /*String eplQuery = "context BallPossessionContext " +
-                          "select * " +
-                          "from SensorEvent "
-                          ;*/
-        
-
-        
-        //EPStatement statement = admin.createEPL(eplQuery);
-
-
-        /*statement.addListener((newData, oldData) -> {
+        statement2.addListener((newData, oldData) -> {
             if (newData != null) {
                 for (EventBean event : newData) {
-                    System.out.println("hola: ");
+                    
+                    //send event
+                    ShotEvent event1 = new ShotEvent(
+                        (String) event.get("sid"),
+                        (long) event.get("ts"),
+                        "off",
+                        (double) event.get("x"),
+                        (double) event.get("y"),
+                        (double) event.get("z"),
+                        (double) event.get("v"),
+                        (double) event.get("vx"),
+                        (double) event.get("vy"),
+                        (double) event.get("vz"),
+                        (double) event.get("a"),
+                        (double) event.get("ax"),
+                        (double) event.get("ay"),
+                        (double) event.get("az"),
+                        " "
+                    );
+                    epService.getEPRuntime().sendEvent(event1);
+
+                    String removeHitBall =  "on ShotEvent se " +
+                                            "delete from NotHitLastBallEvent where sid = se.sid";
+
+                    admin.createEPL(removeHitBall);
+
                 }
             }
-        });*/
-
+        });
     }
 }
