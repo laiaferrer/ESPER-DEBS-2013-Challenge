@@ -3,6 +3,7 @@ package com.example;
 import com.RunningStatistics;
 import com.espertech.esper.client.*;
 import com.example.EventSender;
+import com.example.RunningStatisticsEvent;
 
 //this code solves Query 1
 
@@ -15,24 +16,19 @@ public class EPLProcessor {
 
     public void startListening(EPServiceProvider epService) {
 
+        // Register the listener
+        query1 processor = new query1(epService.getEPAdministrator());
+        processor.startListening(epService);
 
+        Configuration config = new Configuration();
+        // Register the event type (RunningStatisticsEvent)
+        config.addEventType("RunningStatisticsEvent", RunningStatisticsEvent.class.getName());
+            
         String contextEPL = "create context IntensityContext " +
                             "partition by player_id from SensorEvent " +
-                            "initiated by SensorEvent as a " +
-                            "terminated by SensorEvent(intensity != a.intensity)";
+                            "initiated by SensorEvent(sid NOT IN ('4', '8', '10', '12')) as a " +
+                            "terminated by SensorEvent(intensity != a.intensity) ";
 
-            
-        /*String eplQuery = "select " +
-                            "  a.ts as ts_start, " +
-                            "  b.ts as ts_stop, " +
-                            "  a.player_id, " +
-                            "  a.intensity, " +
-                            "  ((b.ts - a.ts) * avg(a.v)) * 1e-15 as distance, " +
-                            "  avg(a.v) as speed " +
-                            "from pattern [" +
-                            "   a=SensorEvent() -> every b=SensorEvent(a.player_id = b.player_id and a.intensity != b.intensity)" +
-                            "]";*/
-        
         
         String eplQuery = "context IntensityContext " +
                           "select " +
@@ -45,6 +41,7 @@ public class EPLProcessor {
                           "from SensorEvent " +
                           "group by player_id, intensity " +
                           "output snapshot when terminated";
+
           
         
         epService.getEPAdministrator().createEPL(contextEPL);
@@ -54,102 +51,10 @@ public class EPLProcessor {
         statement.addListener((newData, oldData) -> {
             if (newData != null) {
                 for (EventBean event : newData) {
-                    //System.out.println("Run Segment: ");
-                    
-                    System.out.printf(
-                        "Run Segment:%n" +
-                        "-----------------------------%n" +
-                        "Start:      %s%n" +
-                        "Stop:       %s%n" +
-                        "Player:     %s%n" +
-                        "Intensity:  %s%n" +
-                        "Distance:   %s mm%n" +
-                        "Avg Speed:  %s μm/s%n%n",
-                        event.get("ts_start"),
-                        event.get("ts_stop"),
-                        event.get("player_id"),
-                        event.get("intensity"),
-                        event.get("distance"),
-                        event.get("speed")
-                    );
-
-                    RunningStatistics stats = EventSender.RunningStatisticsMap.get(event.get("player_id"));
-                    String intensity = (String) event.get("intensity");  
-                    long time;
-                    double distance;
-                    //System.out.println("hola: " + intensity);
-                    switch (intensity) {
-                        case "standing":
-                            time = stats.getStanding_time();
-                            distance = stats.getStanding_distance();
-                            stats.setStanding_time(time + ((long) event.get("ts_stop") - (long) event.get("ts_start")));
-                            stats.setStanding_distance(distance + (double) event.get("distance"));
-                            break;
-    
-                        case "trot":
-                            time = stats.getTrot_time();
-                            distance = stats.getTrot_distance();
-                            stats.setTrot_time(time + ((long) event.get("ts_stop") - (long) event.get("ts_start")));
-                            stats.setTrot_distance(distance + (double) event.get("distance"));
-                            break;
-    
-                        case "low_speed_run":
-                            time = stats.getLow_time();
-                            distance = stats.getLow_distance();
-                            stats.setLow_time(time + ((long) event.get("ts_stop") - (long) event.get("ts_start")));
-                            stats.setLow_distance(distance + (double) event.get("distance"));
-                            break;
-    
-                        case "medium_speed_run":
-                            time = stats.getMedium_time();
-                            distance = stats.getMedium_distance();
-                            stats.setMedium_time(time + ((long) event.get("ts_stop") - (long) event.get("ts_start")));
-                            stats.setMedium_distance(distance + (double) event.get("distance"));
-                            break;
-    
-                        case "high_speed_run":
-                            time = stats.getHigh_time();
-                            distance = stats.getHigh_distance();
-                            stats.setHigh_time(time + ((long) event.get("ts_stop") - (long) event.get("ts_start")));
-                            stats.setHigh_distance(distance + (double) event.get("distance"));
-                            break;
-    
-                        case "sprint":
-                            time = stats.getSprint_time();
-                            distance = stats.getSprint_distance();
-                            stats.setSprint_time(time + ((long) event.get("ts_stop") - (long) event.get("ts_start")));
-                            stats.setSprint_distance(distance + (double) event.get("distance"));
-                            break;
-    
-                        default:
-                            break;
-                    }
-
-                    System.out.printf(
-                        "Updated Running Statistics for Player %s:%n" +
-                        "-----------------------------------------------------%n" +
-                        "Standing Time:        %s picoseconds%n" +
-                        "Standing Distance:    %s mm%n" +
-                        "Trot Time:           %s picoseconds%n" +
-                        "Trot Distance:       %s mm%n" +
-                        "Low Speed Run Time:   %s picoseconds%n" +
-                        "Low Speed Run Dist.:  %s mm%n" +
-                        "Medium Speed Run Time:%s picoseconds%n" +
-                        "Medium Speed Run Dist:%s mm%n" +
-                        "High Speed Run Time:  %s picoseconds%n" +
-                        "High Speed Run Dist.: %s mm%n" +
-                        "Sprint Time:         %s picoseconds%n" +
-                        "Sprint Distance:     %s mm%n%n",
-                        stats.getPlayer_id(),
-                        stats.getStanding_time(), stats.getStanding_distance(),
-                        stats.getTrot_time(), stats.getTrot_distance(),
-                        stats.getLow_time(), stats.getLow_distance(),
-                        stats.getMedium_time(), stats.getMedium_distance(),
-                        stats.getHigh_time(), stats.getHigh_distance(),
-                        stats.getSprint_time(), stats.getSprint_distance()
-                    );
-
-                    
+                    //send event
+                    RunningStatisticsEvent event1 = new RunningStatisticsEvent((long) event.get("ts_start"), (String) event.get("player_id"), (String) event.get("intensity"), (double) event.get("speed"));
+                    //System.out.println("Sending RunningStatisticsEvent: " + event1);
+                    epService.getEPRuntime().sendEvent(event1);
                 }
             }
         });

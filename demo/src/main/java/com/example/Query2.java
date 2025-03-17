@@ -4,11 +4,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+
 import com.RunningStatistics;
 import com.espertech.esper.client.*;
 import com.example.EventSender;
 import com.example.BallPossessionPlayer;
-import com.example.BallPossessionTeam;
 
 
 public class Query2 {
@@ -16,90 +16,111 @@ public class Query2 {
 
     public Query2(EPAdministrator admin) {
         this.admin = admin;
-        //admin.getConfiguration().addImport(ClosestPlayerUtils.class.getName());
-        // Register the UDFs before using them in EPL queries
-        admin.getConfiguration().addImport("com.example.ClosestPlayerUtils");
-        admin.getConfiguration().addPlugInSingleRowFunction("getClosestPlayerId", "com.example.ClosestPlayerUtils", "getClosestPlayerId");
-        admin.getConfiguration().addPlugInSingleRowFunction("getClosestDistance", "com.example.ClosestPlayerUtils", "getClosestDistance");
-    }
-
-    public static Double getClosestDistance(SensorEvent ballEvent) {
-        String closestPlayerId = getClosestPlayerId(ballEvent);
-        SensorEvent playerEvent = EventSender.PlayerPosition.get(closestPlayerId);
-
-        double ballX = ballEvent.getX();
-        double ballY = ballEvent.getY();
-        double ballZ = ballEvent.getZ();
-
-        double playerX = playerEvent.getX();
-        double playerY = playerEvent.getY();
-        double playerZ = playerEvent.getZ();
-
-        // Calculate Euclidean distance between the player and the ball
-        double distance = Math.sqrt(Math.pow(playerX - ballX, 2) + Math.pow(playerY - ballY, 2) + Math.pow(playerZ - ballZ, 2));
-
-        return distance;
-    }
-
-    public static String getClosestPlayerId(SensorEvent ballEvent) {
-        String closestPlayerId = null;
-        double minDistance = Double.MAX_VALUE;  // Initialize with a very large number
-
-        // Get the position of the ball (from ballEvent)
-        double ballX = ballEvent.getX();
-        double ballY = ballEvent.getY();
-        double ballZ = ballEvent.getZ();
-
-        for (Map.Entry<String, SensorEvent> entry : EventSender.PlayerPosition.entrySet()) {
-            String playerId = entry.getKey();
-            SensorEvent playerEvent = entry.getValue();
-
-            // Get the player's position
-            double playerX = playerEvent.getX();
-            double playerY = playerEvent.getY();
-            double playerZ = playerEvent.getZ();
-
-            // Calculate Euclidean distance between the player and the ball
-            double distance = Math.sqrt(Math.pow(playerX - ballX, 2) + Math.pow(playerY - ballY, 2) + Math.pow(playerZ - ballZ, 2));
-
-            // Update the closest player if this player is closer
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestPlayerId = playerId;
-            }
-        }
-        return closestPlayerId;  
     }
 
     public void startListening(EPServiceProvider epService) {
+        
+        Query2_2 query2_2 = new Query2_2(epService.getEPAdministrator());
+        query2_2.startListening(epService);
 
-        String contextEPL = "create context BallPossessionContext " +
-                            "partition by sid from SensorEvent(sid = '4' or sid = '8' or sid = '10' or sid = '12') " +
-                            "initiated by SensorEvent(a > 55) as a " +        //to make sure that we are tracking the ball
-                            "terminated by SensorEvent(a < 55) as endEvent " 
-                            //"prev(endEvent.a) >= 55 and " + 
-                            //"getClosestPlayerId(a) != getClosestPlayerId(endEvent) and " +
-                            //"getClosestDistance(endEvent) < 1000"       //beacuse we should check that is closer than 1m but the values are given in mm
-                            ;
+        Configuration config = new Configuration();
+        config.addEventType("ShotEvent", ShotEvent.class.getName());
 
-        epService.getEPAdministrator().createEPL(contextEPL);
 
-        // Define another EPL query, for example, detecting sudden speed changes
-        String eplQuery = "context BallPossessionContext " +
-                          "select * " +
-                          "from SensorEvent ";
+        String createBallWindow = "create window NotHitLastBallEvent.win:length(1) as BallEvent";
+        admin.createEPL(createBallWindow);
 
-        EPStatement statement = admin.createEPL(eplQuery);
+        String insertBallEvents = "insert into NotHitLastBallEvent " +
+                                  "select * " +
+                                  "from BallEvent " +
+                                  "where sid = '4' or sid = '8' or sid = '10' or sid = '12'";
 
+        admin.createEPL(insertBallEvents);
+
+
+        //String createPlayersWindow = "create window Players.std:unique(sid) as SensorEvent";
+
+        //admin.createEPL(createPlayersWindow);
+
+        /*String insertPlayers = "insert into Players " +
+                               "select * from SensorEvent " + 
+                               "where sid NOT IN ('4', '8', '10', '12')";
+
+        admin.createEPL(insertPlayers);*/
+        
+        String detectAndPredictShot =   "select b.sid as sid, p.ts as ts, p.player_id as player_id, b.x as x, b.y as y, b.z as z, b.v as v, b.vx as vx, b.vy as vy, b.vz as vz, b.a as a, b.ax as ax, b.ay as ay, b.az as az, p.team_id as team_id " +
+                                        "from Players p, NotHitLastBallEvent b " +
+                                        "where (p.x - b.x) * (p.x - b.x) + (p.y - b.y) * (p.y - b.y) + (p.z - b.z) * (p.z - b.z) <= 1000000 " +  
+                                        "and p.a >= 55000000 " +
+                                        "and p.ts > b.ts";
+
+        EPStatement statement = admin.createEPL(detectAndPredictShot);
 
         statement.addListener((newData, oldData) -> {
             if (newData != null) {
                 for (EventBean event : newData) {
-                    System.out.println("Significant Speed Change Detected: ");
+                    
+                    //send event
+                    ShotEvent event1 = new ShotEvent(
+                        (String) event.get("sid"),
+                        (long) event.get("ts"),
+                        (String) event.get("player_id"),
+                        (double) event.get("x"),
+                        (double) event.get("y"),
+                        (double) event.get("z"),
+                        (double) event.get("v"),
+                        (double) event.get("vx"),
+                        (double) event.get("vy"),
+                        (double) event.get("vz"),
+                        (double) event.get("a"),
+                        (double) event.get("ax"),
+                        (double) event.get("ay"),
+                        (double) event.get("az"),
+                        (String) event.get("team_id")
+                    );
+                    epService.getEPRuntime().sendEvent(event1);
+
+                    String removeHitBall =  "on ShotEvent se " +
+                                            "delete from NotHitLastBallEvent where sid = se.sid";
+
+                    admin.createEPL(removeHitBall);
+
                 }
             }
         });
 
-        System.out.println("Query2 is listening...");
+        /*epService = UDFRegistration.registerUDF(); // Ensure UDF is registered
+        this.admin = epService.getEPAdministrator(); // Update the admin instance*/
+
+        /*String contextEPL = "create context BallPossessionContext " +
+                            "initiated by SensorEvent(com.example.ClosestPlayerUtils.getDistance(x, y, z) < 1) as startEvent " +
+                            "terminated by SensorEvent(com.example.ClosestPlayerUtils.getDistance(x, y, z) < 1 AND playerId != startEvent.playerId) as endEvent " ;*/
+
+
+        //sid NOT IN ('4', '8', '10', '12') AND a > 55 AND
+        //OR GameEvent(eventType = 'OUT_OF_BOUNDS') 
+        //OR GameEvent(eventType = 'STOP');
+
+        //epService.getEPAdministrator().createEPL(contextEPL);
+
+        // Define another EPL query, for example, detecting sudden speed changes
+        /*String eplQuery = "context BallPossessionContext " +
+                          "select * " +
+                          "from SensorEvent "
+                          ;*/
+        
+
+        
+        //EPStatement statement = admin.createEPL(eplQuery);
+
+
+        /*statement.addListener((newData, oldData) -> {
+            if (newData != null) {
+                for (EventBean event : newData) {
+                    System.out.println("hola: ");
+                }
+            }
+        });*/
+
     }
 }
