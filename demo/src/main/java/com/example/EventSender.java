@@ -50,6 +50,7 @@ public class EventSender {
         Query2 query2 = new Query2(epService.getEPAdministrator());
         query2.startListening(epService);
 
+        
         // Get an event runtime
         EPRuntime runtime = epService.getEPRuntime();
 
@@ -196,18 +197,21 @@ public class EventSender {
                         // Send event to Esper as a **stream**
                         epService.getEPRuntime().sendEvent(event);
 
-                        //if it is the event that will terminate the context resend it so that it can initialize another context
-                        String i =  PlayerPosition.get(event.getPlayer_id()).getintensity();
-                        //System.out.println("Previous intensity: " + i + " Actual intensity: "+ event.getintensity());
-                        if(event.getintensity() != i && i != "") {
-                            //System.out.println("Repeated Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
-                            //event.setTs(event.getTs() + 1);
-                            epService.getEPRuntime().sendEvent(event);
+                        if (PlayerPosition.containsKey(event.getPlayer_id())) {
+                            System.out.println("ID: " + event.getSid());
+                            //if it is the event that will terminate the context resend it so that it can initialize another context
+                            String i =  PlayerPosition.get(event.getPlayer_id()).getintensity();
+                            //System.out.println("Previous intensity: " + i + " Actual intensity: "+ event.getintensity());
+                            if(event.getintensity() != i && i != "") {
+                                //System.out.println("Repeated Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
+                                //event.setTs(event.getTs() + 1);
+                                epService.getEPRuntime().sendEvent(event);
+                            }
+
+
+                            //update the position of the player
+                            PlayerPosition.put(event.getPlayer_id(), event);
                         }
-
-
-                        //update the position of the player
-                        PlayerPosition.put(event.getPlayer_id(), event);
 
                         //System.out.println("Event sent: " + event.getSid() + ", " + event.getTs() + ", " + event.getPlayer_id() + ", " + event.getTeam_id() + ", " + event.getintensity());
                     }

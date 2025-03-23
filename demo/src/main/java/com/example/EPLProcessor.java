@@ -27,7 +27,7 @@ public class EPLProcessor {
         String contextEPL = "create context IntensityContext " +
                             "partition by player_id from SensorEvent " +
                             "initiated by SensorEvent(sid NOT IN ('4', '8', '10', '12')) as a " +
-                            "terminated by SensorEvent(intensity != a.intensity) ";
+                            "terminated by SensorEvent(intensity != a.intensity AND (ts - a.ts) >= 1000000000000) ";
 
         
         String eplQuery = "context IntensityContext " +
@@ -40,7 +40,7 @@ public class EPLProcessor {
                           "  avg(v) as speed " +
                           "from SensorEvent " +
                           "group by player_id, intensity " +
-                          "output snapshot when terminated";
+                          "output last every 20 milliseconds";
 
           
         
