@@ -49,7 +49,7 @@ public class Query2_2 {
                         long ts = (long) event.get("prev_ts");
                         int hits = 1;
 
-                        if (teamId != " ") {
+                        if (teamId != " " && playerId != "off") {
                             PlayerPosession event1 = new PlayerPosession(ts, playerId, time, hits, teamId);
 
                             if (playerPossessionMap.containsKey(playerId)) {
@@ -76,7 +76,7 @@ public class Query2_2 {
                             printWriter.println("----------------------------");
                             printWriter.println();
 
-                            // Send event to the runtime
+                            // Send event
                             epService.getEPRuntime().sendEvent(event1);
                         }
                     }

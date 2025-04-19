@@ -30,9 +30,9 @@ public class EventSender {
         epService = UDFRegistration.registerUDF();
 
         new Query3(epService.getEPAdministrator()).startListening(epService);
-        //new Query4(epService.getEPAdministrator()).startListening(epService);
-        //new Query4_2(epService.getEPAdministrator()).startListening(epService);
-        //new Query2(epService.getEPAdministrator()).startListening(epService);
+        new Query4(epService.getEPAdministrator()).startListening(epService);
+        new Query4_2(epService.getEPAdministrator()).startListening(epService);
+        new Query2(epService.getEPAdministrator()).startListening(epService);
 
         EPRuntime runtime = epService.getEPRuntime();
 
@@ -173,7 +173,7 @@ public class EventSender {
 
                 PlayerIntensity.put(playerId, intensity);
                 
-                //System.out.println("EVENT SEND! SID: " + event.getSid() + " PLAYER_ID: " + event.getPlayer_id() + " INTENSITY: " + event.getintensity() + " TS: " + event.getTs());
+                System.out.println("EVENT SEND! SID: " + event.getSid() + " PLAYER_ID: " + event.getPlayer_id() + " INTENSITY: " + event.getintensity() + " TS: " + event.getTs());
                 runtime.sendEvent(event);
             }
         }

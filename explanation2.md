@@ -155,7 +155,6 @@ time_percent = (teamA_time / total_time) * 100
 - **5 min**
 - **20 min**
 - **Whole game**
--
 
 ---
 

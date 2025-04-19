@@ -7,7 +7,7 @@
     import com.espertech.esper.client.*;
     import com.example.EventSender;
     import com.example.RunningStatisticsEvent;
-
+ 
     //this code solves Query 1
 
     public class EPLProcessor {
@@ -36,8 +36,8 @@
                 
             String contextEPL = "create context IntensityContext " +
                                 "partition by player_id from SensorEvent " +
-                                "initiated by SensorEvent(sid NOT IN ('4', '8', '10', '12')) as a " +
-                                "terminated by SensorEvent(intensity != a.intensity AND (ts - a.ts) >= 1000000000000) ";
+                                "initiated by SensorEvent(sid NOT IN ('4', '8', '10', '12', '105', '106')) as a " +
+                                "terminated by SensorEvent(a.player_id = player_id and  intensity != a.intensity AND (ts - a.ts) >= 1000000000000) ";
 
             
             String eplQuery = "context IntensityContext " +
@@ -66,24 +66,6 @@
                 }
             });
 
-            String eplQuery1 = "select * from SensorEvent";
-
-
-            
-            EPStatement statement1 = admin.createEPL(eplQuery1);
-                    
-            statement1.addListener((newData, oldData) -> {
-                if (newData != null) {
-                    eventCount += newData.length;
-            
-                    long now = System.currentTimeMillis();
-                    /*if (now - startTime >= 1000) {
-                        System.out.println("Throughput: " + eventCount + " events/second");
-                        eventCount = 0;
-                        startTime = now;
-                    }*/
-                }
-            });
 
             System.out.println("Esper Query is runningggg...");
         }

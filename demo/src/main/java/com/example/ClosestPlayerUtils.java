@@ -10,7 +10,7 @@ public class ClosestPlayerUtils {
         return Query2.getClosestPlayerId(ballEvent);
     }*/
 
-    // UDF method to get the closest distance
+    // UDF  method to get the closest distance
     public static Double getDistance(double playerX, double playerY, double playerZ) {
         SensorEvent ballEvent = EventSender.BallPosition;
 

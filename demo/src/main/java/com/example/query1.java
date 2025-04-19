@@ -6,7 +6,7 @@ import com.example.RunningStatisticsEvent;
 
 import java.util.concurrent.BlockingQueue;
 
-public class query1 {
+public class query1 { 
     private final EPAdministrator admin;
     private final BlockingQueue<String> logQueue;
 
@@ -17,10 +17,13 @@ public class query1 {
 
     public void startListening(EPServiceProvider epService) {
         epService.getEPAdministrator().getConfiguration().addEventType(RunningStatisticsEvent.class);
+        
+        String contextEPL = "create context PerPlayerContext partition by player_id from RunningStatisticsEvent";
+        admin.createEPL(contextEPL);
 
-        String eplQuery = "select prev(1, ts_start) as prev_ts_start, ts_start, player_id, prev(1, intensity) as prev_intensity, intensity, prev(1, speed) as prev_speed " +
-                          "from RunningStatisticsEvent.win:length(2) " +
-                          "group by player_id ";
+        String eplQuery = "context PerPlayerContext " +
+                          "select prev(1, ts_start) as prev_ts_start, ts_start, player_id, prev(1, intensity) as prev_intensity, intensity, prev(1, speed) as prev_speed " +
+                          "from RunningStatisticsEvent.win:length(2) ";
 
         EPStatement statement = epService.getEPAdministrator().createEPL(eplQuery);
 
@@ -29,7 +32,7 @@ public class query1 {
                 for (EventBean event : newData) {
                     Object prevTsStart = event.get("prev_ts_start");
                     Object currTsStart = event.get("ts_start");
-                    System.out.println("PREV: " + prevTsStart + " CURRENT: " + currTsStart);
+                    //System.out.println("PREV: " + prevTsStart + " CURRENT: " + currTsStart);
 
                     if (prevTsStart != null && currTsStart != null) {
                         double speed = (double) event.get("prev_speed");
@@ -101,17 +104,17 @@ public class query1 {
 
                             sb.append("Updated Running Statistics for Player ").append(playerId).append(":\n")
                             .append("-----------------------------------------------------\n")
-                            .append("Standing Time:        ").append(stats.getStanding_time()).append(" picoseconds\n")
+                            .append("Standing Time:        ").append(stats.getStanding_time()).append(" milliseconds\n")
                             .append("Standing Distance:    ").append(stats.getStanding_distance()).append(" mm\n")
-                            .append("Trot Time:            ").append(stats.getTrot_time()).append(" picoseconds\n")
+                            .append("Trot Time:            ").append(stats.getTrot_time()).append(" milliseconds\n")
                             .append("Trot Distance:        ").append(stats.getTrot_distance()).append(" mm\n")
-                            .append("Low Speed Run Time:   ").append(stats.getLow_time()).append(" picoseconds\n")
+                            .append("Low Speed Run Time:   ").append(stats.getLow_time()).append(" milliseconds\n")
                             .append("Low Speed Run Dist.:  ").append(stats.getLow_distance()).append(" mm\n")
-                            .append("Medium Speed Run Time:").append(stats.getMedium_time()).append(" picoseconds\n")
+                            .append("Medium Speed Run Time:").append(stats.getMedium_time()).append(" milliseconds\n")
                             .append("Medium Speed Run Dist:").append(stats.getMedium_distance()).append(" mm\n")
-                            .append("High Speed Run Time:  ").append(stats.getHigh_time()).append(" picoseconds\n")
+                            .append("High Speed Run Time:  ").append(stats.getHigh_time()).append(" milliseconds\n")
                             .append("High Speed Run Dist.: ").append(stats.getHigh_distance()).append(" mm\n")
-                            .append("Sprint Time:          ").append(stats.getSprint_time()).append(" picoseconds\n")
+                            .append("Sprint Time:          ").append(stats.getSprint_time()).append(" milliseconds\n")
                             .append("Sprint Distance:      ").append(stats.getSprint_distance()).append(" mm\n\n");
 
                             
@@ -119,7 +122,7 @@ public class query1 {
                             logQueue.offer(sb.toString());
 
                         } else {
-                            logQueue.offer("Previous event is null (only one event in window)");
+                            //logQueue.offer("Previous event is null (only one event in window)");
                         }
                         }
                 }

@@ -25,14 +25,11 @@ public class Query3 {
         new Query3_2(epService.getEPAdministrator(), logQueue).startListening(epService);
         new HeatmapVisualization(epService.getEPAdministrator());
 
-        String contextEPL = "create context PlayerContext partition by player_id from SensorEvent ";
-        admin.createEPL(contextEPL);
-
-        String eplQuery = "context PlayerContext " +
-                "select prev(1, ts) as prev_ts, ts, player_id, prev(1, x) as prev_x, prev(1, y) as prev_y " +
-                "from SensorEvent.win:length(2) " +
-                "where sid NOT IN ('4', '8', '10', '12') " +
-                "group by player_id ";
+        
+        String eplQuery =   "select prev(1, ts) as prev_ts, ts, prev(1, player_id) as player_id, prev(1, x) as prev_x, prev(1, y) as prev_y " +
+                            "from SensorEvent.win:length(2) " +
+                            "where sid NOT IN ('4', '8', '10', '12', '105', '106') " +
+                            "group by player_id ";
 
         EPStatement statement = admin.createEPL(eplQuery);
 
@@ -44,6 +41,8 @@ public class Query3 {
                     Object y = event.get("prev_y");
                     long ts = (Long) event.get("ts");
                     long prev_ts = (Long) event.get("prev_ts");
+
+                    //System.out.println("PLAYER_ID: " + playerId + " TS: " + prev_ts);
 
                     if (x != null && y != null && inside_court((double) x, (double) y)) {
                         updatePlayerCellTime(playerId, (double) x, (double) y, ts, prev_ts, epService);
@@ -62,8 +61,8 @@ public class Query3 {
     private void updatePlayerCellTime(String playerId, double x, double y, long ts, long prev_ts, EPServiceProvider epService) {
         if (ts == prev_ts) return;
 
-        int gridRows = 8;
-        int gridCols = 13;
+        int gridRows = 64;
+        int gridCols = 100;
 
         double rowHeight = 67.92 / gridRows;
         double x_cell = Math.floor((x / 1000) / (52.47 / gridCols));

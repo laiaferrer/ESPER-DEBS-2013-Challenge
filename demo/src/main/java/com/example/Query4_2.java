@@ -17,28 +17,22 @@ public class Query4_2 {
     }
 
     public void startListening(EPServiceProvider epService) {
-        epService.getEPAdministrator().getConfiguration().addEventType("ShotEvent", ShotEvent.class.getName());
+        epService.getEPAdministrator().getConfiguration().addEventType("GoalShotEvent", ShotEvent.class.getName());
 
         String contextEPL = "create context GoalShotContext " +
-                            "initiated by ShotEvent as a " +
+                            "initiated by GoalShotEvent as a " +
                             "terminated by BallEvent(x < 0 or x > 52477 or y < -33960 or y > 33965 or " +
                             "(vy < 0 and x > 22578.5 and x < 29898.5 and y <= 33941.0 and y > 31441) " +
-                            "or (vy > 0 and x > 22560.0 and x < 29880.0 and y > -33968.0 and y < -31468))";
+                            "or (a.vy > 0 and vy <= 0) or (a.vy < 0 and vy >= 0))";
 
         epService.getEPAdministrator().createEPL(contextEPL);
 
-        String playerQuery = "select * from ShotEvent";
-        EPStatement statement = admin.createEPL(playerQuery);
+        
 
-        statement.addListener((newData, oldData) -> {
-            if (newData != null) {
-                for (EventBean event : newData) {
-                    player_id = (String) event.get("playerId");
-                }
-            }
-        });
+        String eplQuery = "context GoalShotContext " +
+                  "select context.a.playerId as player_id, ts, x, y, z, v, vx, vy, vz, a, ax, ay, az " +
+                  "from BallEvent";
 
-        String eplQuery = "context GoalShotContext select context.id, * from BallEvent";
         EPStatement statement2 = admin.createEPL(eplQuery);
 
         statement2.addListener((newData, oldData) -> {
@@ -57,7 +51,7 @@ public class Query4_2 {
                     for (EventBean event : newData) {
                         printWriter.println("----------------------------");
                         printWriter.println("ShotEvent: ts " + event.get("ts") + 
-                                           " player_id: " + player_id +  
+                                           " player_id: " + event.get("player_id") +  
                                            " x: " + event.get("x") + 
                                            " y: " + event.get("y") + 
                                            " z: " + event.get("z") + 
