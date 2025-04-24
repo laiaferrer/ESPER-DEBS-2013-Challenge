@@ -37,7 +37,7 @@ java -cp target/demo-1.0-SNAPSHOT.jar com.example.Main
 cd /demo
 mvn exec:java
 ```
-Note: In EventSender.java, the input file path is specified on line 55. To run the project successfully, make sure you download the required data file and adjust the path accordingly if needed.
+> Note: In EventSender.java, the input file path is specified on line 55. To run the project successfully, make sure you download the required data file and adjust the path accordingly if needed.
 ---
 
 ## 📬 Contact
