@@ -40,7 +40,7 @@ mvn exec:java
 > Note: In EventSender.java, the input file path is specified on line 55. To run the project successfully, make sure you download the required data file and adjust the path accordingly if needed.
 ---
 
-## 📬 Contact
+##  Contact
 
 Created by **Laia Ferrer**  
 Thesis project (2024-2025 Second Semester)  
