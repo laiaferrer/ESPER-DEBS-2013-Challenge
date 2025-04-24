@@ -60,7 +60,7 @@
                     for (EventBean event : newData) {
                         //send event
                         RunningStatisticsEvent event1 = new RunningStatisticsEvent((long) event.get("ts_start"), (long) event.get("ts_stop"), (String) event.get("player_id"), (String) event.get("intensity"), (double) event.get("speed"));
-                        System.out.println("Sending RunningStatisticsEvent: PLAYER: " + event1.getPlayer_id() + "INTENSITY: " + event1.getIntensity() + " TS_START: " + event1.getTs_start() + " TS_STOP: " + event1.getTs_stop());
+                        //System.out.println("Sending RunningStatisticsEvent: PLAYER: " + event1.getPlayer_id() + "INTENSITY: " + event1.getIntensity() + " TS_START: " + event1.getTs_start() + " TS_STOP: " + event1.getTs_stop());
                         epService.getEPRuntime().sendEvent(event1);
                     }
                 }

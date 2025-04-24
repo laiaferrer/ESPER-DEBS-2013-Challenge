@@ -37,7 +37,7 @@ public class Query2_2 {
                     if (!file.exists()) {
                         file.createNewFile();  // Create the file if it doesn't exist
                     }
-
+                    
                     // Open FileWriter in append mode
                     FileWriter fileWriter = new FileWriter(file, true);
                     PrintWriter printWriter = new PrintWriter(fileWriter);
@@ -60,8 +60,11 @@ public class Query2_2 {
                                 posession.setHits(posession.getHits() + hits);
                                 hits = posession.getHits();
                                 time = posession.getDuration();
+                                //System.out.println("UPDATE SHOT EVENT:  ts: " + ts + " time: " +  time + " hits: " + hits + " duration:  " + time);
                             } else {
                                 // Insert new player data
+                                //System.out.println("FINISH: "+  (long) event.get("ts"));
+                                //System.out.println("CREATE SHOT EVENT:  ts: " + ts + " time: " +  time + " hits: " + hits + " time:  " + time);
                                 playerPossessionMap.put(playerId, event1);
                             }
 

@@ -38,18 +38,18 @@ public class Query2 {
         admin.createEPL(insertBallEvents);
 
         
-        String detectAndPredictShot =   "select b.sid as sid, p.ts as ts, p.player_id as player_id, b.x as x, b.y as y, b.z as z, b.v as v, b.vx as vx, b.vy as vy, b.vz as vz, b.a as a, b.ax as ax, b.ay as ay, b.az as az, p.team_id as team_id " +
+        String detectAndPredictShot =   "select b.sid as sid, b.ts as ts, p.player_id as player_id, b.x as x, b.y as y, b.z as z, b.v as v, b.vx as vx, b.vy as vy, b.vz as vz, b.a as a, b.ax as ax, b.ay as ay, b.az as az, p.team_id as team_id " +
                                         "from Players p, NotHitLastBallEvent b " +
                                         "where (p.x - b.x) * (p.x - b.x) + (p.y - b.y) * (p.y - b.y) + (p.z - b.z) * (p.z - b.z) <= 1000000 " +  
-                                        "and p.a >= 55000000 " +
-                                        "and p.ts > b.ts";
+                                        "and b.a >= 55000000 " +
+                                        "and b.ts > p.ts";
 
         EPStatement statement = admin.createEPL(detectAndPredictShot);
 
         statement.addListener((newData, oldData) -> {
             if (newData != null) {
                 for (EventBean event : newData) {
-                    
+                    System.out.println("EVENT: sid: " + event.get("sid") + " ts: " + event.get("ts") + " player_id: " + event.get("player_id"));
                     //send event
                     ShotEvent event1 = new ShotEvent(
                         (String) event.get("sid"),

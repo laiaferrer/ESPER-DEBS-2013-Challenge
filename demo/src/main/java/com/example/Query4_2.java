@@ -21,7 +21,7 @@ public class Query4_2 {
 
         String contextEPL = "create context GoalShotContext " +
                             "initiated by GoalShotEvent as a " +
-                            "terminated by BallEvent(x < 0 or x > 52477 or y < -33960 or y > 33965 or " +
+                            "terminated by BallEvent(x < 1 or x > 52477 or y < -33960 or y > 33965 or " +
                             "(vy < 0 and x > 22578.5 and x < 29898.5 and y <= 33941.0 and y > 31441) " +
                             "or (a.vy > 0 and vy <= 0) or (a.vy < 0 and vy >= 0))";
 

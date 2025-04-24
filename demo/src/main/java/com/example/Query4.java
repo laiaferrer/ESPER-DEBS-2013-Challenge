@@ -82,6 +82,7 @@ public class Query4 {
                         (String) event.get("team_id")
                     );
                     epService.getEPRuntime().sendEvent(event1);
+                    System.out.println("goal event: ts: " + (long) event.get("ts"));
                 }
             }
         });
