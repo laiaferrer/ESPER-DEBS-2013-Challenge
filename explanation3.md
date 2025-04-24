@@ -1,27 +1,27 @@
+
 # Query 3 Explanation
 
 **The system receives continuous sensor events from players and tracks their positions on the field. The goal is to generate real-time heatmaps indicating how long each player spends in specific field regions.**
 
 ---
 
-## The Problem
+##  The Problem
 
-> For each player, calculate the percentage of time they spend in each cell of the field across multiple grid resolutions and time windows.
->
+> For each player, calculate the percentage of time they spend in each cell of the field across multiple grid resolutions and time windows.  
 > The system returns 16 result streams:
->
-> - 4 grid resolutions: (8x13), (16x25), (32x50), (64x100)
-> - 4 time windows: 1 min, 5 min, 10 min, whole game
->
-> Each result stream is updated every second and contains:
->
-> `ts, player_id, cell_x1, cell_y1, cell_x2, cell_y2, percent_time_in_time_cell`
+
+- 4 grid resolutions: (8x13), (16x25), (32x50), (64x100)
+- 4 time windows: 1 min, 5 min, 10 min, whole game
+
+Each result stream is updated every second and contains:
+
+```
+ts, player_id, cell_x1, cell_y1, cell_x2, cell_y2, percent_time_in_time_cell
+```
 
 ---
 
-## Grid Configuration
-
-Each field grid resolution divides the field into rectangular cells:
+##  Grid Configuration
 
 | Grid Size | Rows | Columns | Total Cells |
 | --------- | ---- | ------- | ----------- |
@@ -32,44 +32,40 @@ Each field grid resolution divides the field into rectangular cells:
 
 - Field dimensions:
   - X: 52.47 meters (33941 units)
-  - Y: 67.92 meters (67925 units total; from -33960 to 33965)
+  - Y: 67.92 meters (from -33960 to 33965)
 
 ---
 
-## Modeling
+##  Modeling
 
 ```java
 public class HeatMapEvent {
-    private long ts;
-    private String playerId;
-    private double cellX;
-    private double cellY;
-    private long duration;
+    long ts;
+    String playerId;
+    double cellX;
+    double cellY;
+    long duration;
 }
 ```
 
-This event is generated every time a player moves between positions. It calculates how much time the player spent in a specific cell.
+This event is emitted each time a player changes position. It logs how long the player stayed in a specific cell.
 
 ---
 
-## EPL Implementation
+##  EPL Implementation
 
 ### Step 1: Track Player Movement
 
 ```sql
-create context PlayerContext partition by player_id from SensorEvent;
-
-context PlayerContext
-select prev(1, ts) as prev_ts, ts, player_id,
+select prev(1, ts) as prev_ts, ts, prev(1, player_id) as player_id,
        prev(1, x) as prev_x, prev(1, y) as prev_y
 from SensorEvent.win:length(2)
-where sid NOT IN ('4', '8', '10', '12')
+where sid NOT IN ('4', '8', '10', '12', '105', '106')
 group by player_id;
 ```
 
-> This query tracks the movement of each player (excluding the ball sensors). For each movement update, we compute the cell they were in and how long they stayed there.
-
-If the previous event is valid and the location is inside the field, we emit a `HeatMapEvent`.
+> This query captures movement updates per player.  
+> If the previous event is valid and inside the field, a `HeatMapEvent` is emitted.
 
 ---
 
@@ -78,28 +74,28 @@ If the previous event is valid and the location is inside the field, we emit a `
 ```sql
 select sum(duration) as total_time, ts, playerId
 from HeatMapEvent.win:time(5 min)
-group by playerId
-output every 1 second;
+group by playerId;
 
 select sum(duration) as total_time_cell, playerId, cellX, cellY, ts
 from HeatMapEvent.win:time(5 min)
-group by playerId, cellX, cellY
-output every 1 second;
+group by playerId, cellX, cellY;
 ```
 
-> The first query gives the total time a player spent on the field. The second query gives the total time a player spent in a specific cell. This way we can compute the % a player has spend in each cell.
+> First query: total time spent on the field.  
+> Second query: time spent in each cell.  
+> Percent time is calculated as: `(total_time_cell / total_time) * 100`
 
 ---
 
-## Output Formatting
+##  Output Formatting
 
-For each `(playerId, cellX, cellY)` at time `ts`:
+For each `(playerId, cellX, cellY)` at timestamp `ts`:
 
 ```java
 percent_time_in_cell = (total_time_cell / total_time) * 100;
 ```
 
-We also compute the actual coordinates of the cell:
+Cell boundaries are computed as:
 
 ```java
 cell_x1 = (cellX - 1) * (field_width / gridCols);
@@ -108,12 +104,12 @@ cell_y1 = cellY * (field_height / gridRows);
 cell_y2 = (cellY - 1) * (field_height / gridRows);
 ```
 
-All of this is logged using a queue-based `AsyncLogger`, and values are formatted to two decimal places.
+All outputs are logged with `AsyncLogger`, rounded to two decimal places.
 
 ---
 
-## Multi-Resolution Support
+##  Multi-Resolution Support
 
-This entire process is repeated for all 4 grid configurations and 4 time windows. Each configuration outputs a separate stream, allowing full heatmap granularity across time and space.
+The logic above is repeated for all combinations of grid sizes and time windows. Each pair produces a unique result stream, offering fine-grained spatial and temporal heatmap statistics.
 
 ---
