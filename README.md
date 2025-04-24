@@ -43,6 +43,6 @@ mvn exec:java
 ## 📬 Contact
 
 Created by **Laia Ferrer**  
-Thesis project (2024-2025 academic year)  
+Thesis project (2024-2025 Second Semester)  
 
 ---
