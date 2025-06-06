@@ -19,7 +19,7 @@ public class Query4 {
     public void startListening(EPServiceProvider epService) {
         
         Configuration config = new Configuration();
-        config.addEventType("GoalShotEvent", ShotEvent.class.getName());
+        config.addEventType("GoalShotEvent", GoalShotEvent.class.getName());
 
 
         String createBallWindow = "create window LastBallEvent.win:length(1) as BallEvent";
@@ -64,6 +64,7 @@ public class Query4 {
             if (newData != null) {
                 for (EventBean event : newData) {
                     //send event
+                    //System.out.println("GOAL SHOT EVENT: ts = " + event.get("ts"));
                     GoalShotEvent event1 = new GoalShotEvent(
                         (String) event.get("sid"),
                         (long) event.get("ts"),
@@ -82,7 +83,7 @@ public class Query4 {
                         (String) event.get("team_id")
                     );
                     epService.getEPRuntime().sendEvent(event1);
-                    System.out.println("goal event: ts: " + (long) event.get("ts"));
+                    //System.out.println("goal event: ts: " + (long) event.get("ts"));
                 }
             }
         });

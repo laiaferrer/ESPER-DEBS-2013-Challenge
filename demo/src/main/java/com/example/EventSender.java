@@ -33,6 +33,8 @@ public class EventSender {
         new Query4(epService.getEPAdministrator()).startListening(epService);
         new Query4_2(epService.getEPAdministrator()).startListening(epService);
         new Query2(epService.getEPAdministrator()).startListening(epService);
+        //new prova(epService.getEPAdministrator()).startListening(epService);
+
 
         EPRuntime runtime = epService.getEPRuntime();
 
@@ -52,7 +54,7 @@ public class EventSender {
             }
         }
 
-        List<SensorEvent> sensorEvents = streamSensorData("data1.txt", sidToPlayer, sidToTeam);
+        List<SensorEvent> sensorEvents = streamSensorData("full-game", sidToPlayer, sidToTeam);
         sendAllSensorEventsSingleThread(sensorEvents, runtime);
     }
 
@@ -117,6 +119,7 @@ public class EventSender {
                     event.setPlayer_id(sidToPlayer.get(sid));
                     event.setTeam_id(sidToTeam.get(sid));
                     event.setintensity(determineIntensity(v));
+                    //System.out.println("sid: " + sid + " TS: " + ts + " VELOCIDAD: " + v + " INTENSITY: " + event.getintensity());
                     sensorEvents.add(event);
                     PlayerPosition.put(event.getPlayer_id(), event);
                 } else if (ballIds.contains(sid)) {
@@ -128,7 +131,7 @@ public class EventSender {
 
                 long now = System.nanoTime();
                 if ((now - windowStartTime) >= 1_000_000_000L) {
-                    System.out.println("Lines read in last second: " + linesReadInWindow);
+                    //System.out.println("Lines read in last second: " + linesReadInWindow);
                     linesReadInWindow = 0;
                     windowStartTime = now;
                 }

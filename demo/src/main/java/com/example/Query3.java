@@ -25,8 +25,12 @@ public class Query3 {
         new Query3_2(epService.getEPAdministrator(), logQueue).startListening(epService);
         new HeatmapVisualization(epService.getEPAdministrator());
 
+        String contextEPL = "create context PlayerContext partition by player_id from SensorEvent";
+        admin.createEPL(contextEPL);
+
         
-        String eplQuery =   "select prev(1, ts) as prev_ts, ts, prev(1, player_id) as player_id, prev(1, x) as prev_x, prev(1, y) as prev_y " +
+        String eplQuery =   "context PlayerContext " +
+                            "select prev(1, ts) as prev_ts, ts, prev(1, player_id) as player_id, prev(1, x) as prev_x, prev(1, y) as prev_y " +
                             "from SensorEvent.win:length(2) " +
                             "where sid NOT IN ('4', '8', '10', '12', '105', '106') " +
                             "group by player_id ";
@@ -46,8 +50,6 @@ public class Query3 {
 
                     if (x != null && y != null && inside_court((double) x, (double) y)) {
                         updatePlayerCellTime(playerId, (double) x, (double) y, ts, prev_ts, epService);
-                    } else {
-                        logQueue.offer("Previous event is null (only one event in window)");
                     }
                 }
             }

@@ -2,7 +2,8 @@ package com.example;
 
 public class ShotEvent {
 
-    private String sid;
+    private String BallSid;
+    private String PlayerSid;
     private long ts;
     private String playerId;
     private double x;
@@ -19,11 +20,12 @@ public class ShotEvent {
     private String team_id;
 
     // Constructor
-    public ShotEvent(String sid, long ts, String player_id, double x, double y, double z, double v, double vx, double vy, double vz,
-                     double a, double ax, double ay, double az, String team_id) {
-        this.sid = sid;
+    public ShotEvent(String ballSid, String playerSid, long ts, String playerId, double x, double y, double z, double v, double vx, 
+                     double vy, double vz, double a, double ax, double ay, double az, String team_id) {
+        this.BallSid = ballSid;
+        this.PlayerSid = playerSid;
         this.ts = ts;
-        this.playerId = player_id;
+        this.playerId = playerId;
         this.x = x;
         this.y = y;
         this.z = z;
@@ -39,8 +41,12 @@ public class ShotEvent {
     }
 
     // Getters
-    public String getSid() {
-        return sid;
+    public String getBallSid() {
+        return BallSid;
+    }
+
+    public String getPlayerSid() {
+        return PlayerSid;
     }
 
     public long getTs() {
@@ -100,16 +106,20 @@ public class ShotEvent {
     }
 
     // Setters
-    public void setSid(String sid) {
-        this.sid = sid;
+    public void setBallSid(String ballSid) {
+        this.BallSid = ballSid;
+    }
+
+    public void setPlayerSid(String playerSid) {
+        this.PlayerSid = playerSid;
     }
 
     public void setTs(long ts) {
         this.ts = ts;
     }
 
-    public void setPlayerId(String player_id) {
-        this.playerId = player_id;
+    public void setPlayerId(String playerId) {
+        this.playerId = playerId;
     }
 
     public void setX(double x) {

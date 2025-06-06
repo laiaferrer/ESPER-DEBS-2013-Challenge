@@ -25,7 +25,7 @@
         }
 
         public void startListening(EPServiceProvider epService) {
-
+            
             // Register the listener
             query1 processor = new query1(epService.getEPAdministrator(), logQueue);    
             processor.startListening(epService);
@@ -34,12 +34,13 @@
             // Register the event type (RunningStatisticsEvent)
             config.addEventType("RunningStatisticsEvent", RunningStatisticsEvent.class.getName());
                 
+            
             String contextEPL = "create context IntensityContext " +
                                 "partition by player_id from SensorEvent " +
                                 "initiated by SensorEvent(sid NOT IN ('4', '8', '10', '12', '105', '106')) as a " +
-                                "terminated by SensorEvent(a.player_id = player_id and  intensity != a.intensity AND (ts - a.ts) >= 1000000000000) ";
-
+                                "terminated by SensorEvent(a.player_id = player_id and  intensity != a.intensity)";
             
+                        
             String eplQuery = "context IntensityContext " +
                             "select " +
                             "  min(ts) as ts_start, " +
@@ -51,7 +52,16 @@
                             "from SensorEvent " +
                             "output last when terminated";
             
-            epService.getEPAdministrator().createEPL(contextEPL);
+            EPStatement statement2 = epService.getEPAdministrator().createEPL(contextEPL);
+            statement2.addListener((newData, oldData) -> {
+                if (newData != null) {
+                    for (EventBean event : newData) {
+                        //System.out.println("context triggered");
+
+                        //System.out.println("CHANGE OF INTENSITY: "+ event.get("intensity"));
+                    }
+                }
+            });
 
             EPStatement statement = admin.createEPL(eplQuery);
                     
@@ -66,6 +76,7 @@
                 }
             });
 
+            
 
             System.out.println("Esper Query is runningggg...");
         }
