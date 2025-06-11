@@ -38,7 +38,7 @@
             String contextEPL = "create context IntensityContext " +
                                 "partition by player_id from SensorEvent " +
                                 "initiated by SensorEvent(sid NOT IN ('4', '8', '10', '12', '105', '106')) as a " +
-                                "terminated by SensorEvent(a.player_id = player_id and  intensity != a.intensity)";
+                                "terminated by SensorEvent(a.player_id = player_id and  intensity != a.intensity AND (ts - a.ts) >= 1000000000000)";
             
                         
             String eplQuery = "context IntensityContext " +

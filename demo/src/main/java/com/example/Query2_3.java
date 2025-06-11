@@ -25,7 +25,8 @@ public class Query2_3 {
 
     public void startListening(EPServiceProvider epService) {
 
-        String totalTime = "select SUM(duration) as total from PlayerPosession.win:time(1 min)";
+        //"select SUM(duration) as total from PlayerPosession.win:time(1 min)";
+        String totalTime = "select SUM(duration) as total from PlayerPosession";
         EPStatement statement_1 = admin.createEPL(totalTime);
         statement_1.addListener((newData, oldData) -> {
             if (newData != null) {
@@ -35,7 +36,8 @@ public class Query2_3 {
             }
         });
 
-        String totalTimeA = "select SUM(duration) as total_time from PlayerPosession.win:time(1 min) WHERE teamId = 'teamA'";
+        //select SUM(duration) as total_time from PlayerPosession.win:time(1 min) WHERE teamId = 'teamA'
+        String totalTimeA = "select SUM(duration) as total_time from PlayerPosession WHERE teamId = 'teamA'";
         EPStatement statement_1A = admin.createEPL(totalTimeA);
         statement_1A.addListener((newData, oldData) -> {
             if (newData != null) {
@@ -45,7 +47,8 @@ public class Query2_3 {
             }
         });
 
-        String totalTimeB = "select SUM(duration) as total_time from PlayerPosession.win:time(1 min) WHERE teamId = 'teamB'";
+        //select SUM(duration) as total_time from PlayerPosession.win:time(1 min) WHERE teamId = 'teamB
+        String totalTimeB = "select SUM(duration) as total_time from PlayerPosession WHERE teamId = 'teamB'";
         EPStatement statement_1B = admin.createEPL(totalTimeB);
         statement_1B.addListener((newData, oldData) -> {
             if (newData != null) {

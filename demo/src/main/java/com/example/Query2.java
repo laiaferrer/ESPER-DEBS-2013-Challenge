@@ -13,9 +13,13 @@ import com.example.BallPossessionPlayer;
 
 public class Query2 {
     private EPAdministrator admin;
+    private String currentSid;
+    private String lastPlayerSid;
 
     public Query2(EPAdministrator admin) {
         this.admin = admin;
+        currentSid = "";
+        lastPlayerSid = "";
     }
 
     public void startListening(EPServiceProvider epService) {
@@ -97,7 +101,8 @@ public class Query2 {
                                         "where (p.x - b.x) * (p.x - b.x) + (p.y - b.y) * (p.y - b.y) + (p.z - b.z) * (p.z - b.z) <= 1000000 " +  
                                         "and b.a >= 55000000 " +
                                         "and b.ts > p.ts " +
-                                        "order by ((p.x - b.x)*(p.x - b.x) + (p.y - b.y)*(p.y - b.y) + (p.z - b.z)*(p.z - b.z)) asc " +
+                                        //"and b.x >= 0 and b.x <= 52489 and b.y >= -33960 and b.y <= 33965  " +
+                                        "order by ts asc " +
                                         "limit 1";
 
         EPStatement statement = admin.createEPL(detectAndPredictShot);
@@ -107,26 +112,40 @@ public class Query2 {
                 for (EventBean event : newData) {
                     //System.out.println("EVENT: sid: " + event.get("sid") + " Ball_ts: " + event.get("ts") + " player_id: " + event.get("player_id"));
                     //send event
-                    ShotEvent event1 = new ShotEvent(
-                        (String) event.get("sid"),
-                        (String) event.get("PlayerSid"),
-                        (long) event.get("ts"),
-                        (String) event.get("player_id"),
-                        (double) event.get("x"),
-                        (double) event.get("y"),
-                        (double) event.get("z"),
-                        (double) event.get("v"),
-                        (double) event.get("vx"),
-                        (double) event.get("vy"),
-                        (double) event.get("vz"),
-                        (double) event.get("a"),
-                        (double) event.get("ax"),
-                        (double) event.get("ay"),
-                        (double) event.get("az"),
-                        (String) event.get("team_id")
-                    );
-                    epService.getEPRuntime().sendEvent(event1);
-                    System.out.println("EVENT SENDED WITH BALLTS: " + (long) event.get("ts") + " PLAYERTS: " + (long) event.get("player_ts"));
+                    if (lastPlayerSid != (String) event.get("player_id")) {
+                        lastPlayerSid = (String) event.get("player_id");
+                        currentSid = (String) event.get("sid");
+                        double x = (double) event.get("x");
+                        double y = (double) event.get("y");
+
+                        if(x >= 0 && x <= 52489 && y >= -33960 && y <= 33965) {
+                            
+                            ShotEvent event1 = new ShotEvent(
+                            (String) event.get("sid"),
+                            (String) event.get("PlayerSid"),
+                            (long) event.get("ts"),
+                            (String) event.get("player_id"),
+                            (double) event.get("x"),
+                            (double) event.get("y"),
+                            (double) event.get("z"),
+                            (double) event.get("v"),
+                            (double) event.get("vx"),
+                            (double) event.get("vy"),
+                            (double) event.get("vz"),
+                            (double) event.get("a"),
+                            (double) event.get("ax"),
+                            (double) event.get("ay"),
+                            (double) event.get("az"),
+                            (String) event.get("team_id")
+                            );
+                            epService.getEPRuntime().sendEvent(event1);
+                            System.out.println("EVENT SENDED WITH BALLTS: " + (long) event.get("ts") + " BALLSID: " + (String) event.get("sid") + " PLAYERTS: " + (long) event.get("player_ts"));
+                        } else {
+                            //System.out.println("A shot has been detected but not sended because it is off court");
+                        }
+                    } else {
+                        //System.out.println("A shot has been detected but not sended because it is from the same player");
+                    }
                 }
             }
         });
@@ -139,40 +158,39 @@ public class Query2 {
         //to stop the possession if the ball goes off court
         String offCourt =   "select b.sid as sid, b.ts as ts, b.x as x, b.y as y, b.z as z, b.v as v, b.vx as vx, b.vy as vy, b.vz as vz, b.a as a, b.ax as ax, b.ay as ay, b.az as az " +
                             "from NotHitLastBallEvent b " +
-                            "where b.x  < 0 or b.x > 33941 or b.y > 33965 or b.y < -33960 ";
+                            "where b.x  < 0 or b.x > 52489 or b.y > 33965 or b.y < -33960 ";
 
         EPStatement statement2 = admin.createEPL(offCourt);
 
         statement2.addListener((newData, oldData) -> {
             if (newData != null) {
                 for (EventBean event : newData) {
-                    
-                    //send event
-                    ShotEvent event1 = new ShotEvent(
-                        (String) event.get("sid"),
-                        "off",
-                        (long) event.get("ts"),
-                        "off",
-                        (double) event.get("x"),
-                        (double) event.get("y"),
-                        (double) event.get("z"),
-                        (double) event.get("v"),
-                        (double) event.get("vx"),
-                        (double) event.get("vy"),
-                        (double) event.get("vz"),
-                        (double) event.get("a"),
-                        (double) event.get("ax"),
-                        (double) event.get("ay"),
-                        (double) event.get("az"),
-                        " "
-                    );
-                    epService.getEPRuntime().sendEvent(event1);
+                    if ((String) event.get("sid") == currentSid) {
+                        currentSid = "";
+                        lastPlayerSid = "";
+                        System.out.println("THE BALL WENT OFF COURT: sid: " + (String) event.get("sid") + " ts: " + (long) event.get("ts") + " x,y,z: " + (Double) event.get("x") +" , " + (Double) event.get("y") + " , " + (Double) event.get("z"));
+                        //send event
+                        ShotEvent event1 = new ShotEvent(
+                            (String) event.get("sid"),
+                            "off",
+                            (long) event.get("ts"),
+                            "off",
+                            (double) event.get("x"),
+                            (double) event.get("y"),
+                            (double) event.get("z"),
+                            (double) event.get("v"),
+                            (double) event.get("vx"),
+                            (double) event.get("vy"),
+                            (double) event.get("vz"),
+                            (double) event.get("a"),
+                            (double) event.get("ax"),
+                            (double) event.get("ay"),
+                            (double) event.get("az"),
+                            " "
+                        );
+                        epService.getEPRuntime().sendEvent(event1);
 
-                    String removeHitBall =  "on ShotEvent se " +
-                                            "delete from NotHitLastBallEvent where sid = se.ballSid";
-
-                    admin.createEPL(removeHitBall);
-
+                    }
                 }
             }
         });

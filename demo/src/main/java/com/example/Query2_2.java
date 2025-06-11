@@ -24,7 +24,7 @@ public class Query2_2 {
         Configuration config = new Configuration();
         config.addEventType("PlayerPosession", PlayerPosession.class.getName());
 
-        String eplQuery = "select prev(1, ts) as prev_ts, ts, prev(1, playerId) as prev_playerId, prev(1, teamId) as prev_teamId " +
+        String eplQuery = "select prev(1, ts) as prev_ts, ts, prev(1, playerId) as prev_playerId, playerId, prev(1, teamId) as prev_teamId, teamId " +
                           "from ShotEvent.win:length(2)";
 
         EPStatement statement = admin.createEPL(eplQuery);
@@ -43,13 +43,66 @@ public class Query2_2 {
                     PrintWriter printWriter = new PrintWriter(fileWriter);
 
                     for (EventBean event : newData) {
-                        long time = (long) event.get("ts") - (long) event.get("prev_ts");
-                        String playerId = (String) event.get("prev_playerId");
-                        String teamId = (String) event.get("prev_teamId");
-                        long ts = (long) event.get("prev_ts");
+                        String prev_playerId = (String) event.get("prev_playerId");
+                        String playerId = (String) event.get("playerId");
+                        String prev_teamId = (String) event.get("prev_teamId");
+                        String teamId = (String) event.get("teamId");
+                        long prev_ts = (long) event.get("prev_ts");
+                        long ts = (long) event.get("ts");
                         int hits = 1;
 
-                        if (teamId != " " && playerId != "off") {
+                        if (prev_ts != ts) {
+                            System.out.println("EVENTRS RIGHT NOW IN THE WINDOW: PREV_TS: " + prev_ts + " TS: " + ts);
+                            System.out.println("PREV_PLAYER_ID: " + prev_playerId + " PLAYER_ID: " + playerId);
+                            if (prev_playerId != "off") {
+                                /*if (playerId != "off") {
+                                    if (playerPossessionMap.containsKey(playerId)) {
+                                        PlayerPosession posession = playerPossessionMap.get(playerId);
+                                        posession.setTs(ts);
+                                    } else {
+                                        PlayerPosession event1 = new PlayerPosession(ts, playerId, 0, 0, teamId);
+                                        playerPossessionMap.put(playerId, event1);
+                                    }
+                                }*/
+                                PlayerPosession posession;
+                                if (playerPossessionMap.containsKey(prev_playerId)) {
+                                    posession = playerPossessionMap.get(prev_playerId);
+                                } else {
+                                    posession = new PlayerPosession(prev_ts, prev_playerId, 0, 0, prev_teamId);
+                                }
+                            
+                                long time = (long) event.get("ts") - (long) event.get("prev_ts");
+                                posession.setDuration(posession.getDuration() + time);
+                                //System.out.println("HITS: " + posession.getHits());
+                                posession.setHits(posession.getHits() + 1);
+                                playerPossessionMap.put(prev_playerId, posession);
+
+
+                                System.out.println("UPDATE SHOT EVENT:  ts: " + posession.getTs() + " time: " +  posession.getDuration() + " hits: " + posession.getHits());
+                                
+                                printWriter.println("----------------------------");
+                                printWriter.println("Updated Player Possession: ");
+                                printWriter.printf("Timestamp: %d%n", posession.getTs());
+                                printWriter.printf("Player ID: %s%n", prev_playerId);
+                                printWriter.printf("Team ID: %s%n", prev_teamId);
+                                printWriter.printf("Time: %d%n", posession.getDuration());
+                                printWriter.printf("Hits: %d%n", posession.getHits());
+                                printWriter.println("----------------------------");
+                                printWriter.println();
+
+                                // Send event
+                                epService.getEPRuntime().sendEvent(posession);
+
+                            } else {
+                                //System.out.println("The first event is an off court");
+                            }
+                        }
+                        
+
+                        /*
+                         * ------------------------------------------------------------------
+                         
+                        if (playerId != "off") {
                             PlayerPosession event1 = new PlayerPosession(ts, playerId, time, hits, teamId);
 
                             if (playerPossessionMap.containsKey(playerId)) {
@@ -81,7 +134,7 @@ public class Query2_2 {
 
                             // Send event
                             epService.getEPRuntime().sendEvent(event1);
-                        }
+                        }*/
                     }
 
                     // Close the PrintWriter and FileWriter

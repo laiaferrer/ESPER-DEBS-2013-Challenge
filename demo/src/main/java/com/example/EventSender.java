@@ -33,6 +33,7 @@ public class EventSender {
         new Query4(epService.getEPAdministrator()).startListening(epService);
         new Query4_2(epService.getEPAdministrator()).startListening(epService);
         new Query2(epService.getEPAdministrator()).startListening(epService);
+        new ThresholdCalculator(epService.getEPAdministrator()).startListening(epService);
         //new prova(epService.getEPAdministrator()).startListening(epService);
 
 
@@ -54,7 +55,7 @@ public class EventSender {
             }
         }
 
-        List<SensorEvent> sensorEvents = streamSensorData("full-game", sidToPlayer, sidToTeam);
+        List<SensorEvent> sensorEvents = streamSensorData("data1.txt", sidToPlayer, sidToTeam);
         sendAllSensorEventsSingleThread(sensorEvents, runtime);
     }
 
@@ -123,10 +124,8 @@ public class EventSender {
                     sensorEvents.add(event);
                     PlayerPosition.put(event.getPlayer_id(), event);
                 } else if (ballIds.contains(sid)) {
-                    if (inside_court(x, y)) {
-                        SensorEvent event = new SensorEvent(sid, ts, x, y, z, v, a, vx, vy, vz, ax, ay, az);
-                        sensorEvents.add(event);
-                    }
+                    SensorEvent event = new SensorEvent(sid, ts, x, y, z, v, a, vx, vy, vz, ax, ay, az);
+                    sensorEvents.add(event);
                 }
 
                 long now = System.nanoTime();
