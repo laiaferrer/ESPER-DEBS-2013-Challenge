@@ -139,7 +139,7 @@ public class Query2 {
                             (String) event.get("team_id")
                             );
                             epService.getEPRuntime().sendEvent(event1);
-                            System.out.println("EVENT SENDED WITH BALLTS: " + (long) event.get("ts") + " BALLSID: " + (String) event.get("sid") + " PLAYERTS: " + (long) event.get("player_ts"));
+                            //System.out.println("EVENT SENDED WITH BALLTS: " + (long) event.get("ts") + " BALLSID: " + (String) event.get("sid") + " PLAYERTS: " + (long) event.get("player_ts"));
                         } else {
                             //System.out.println("A shot has been detected but not sended because it is off court");
                         }
@@ -168,7 +168,7 @@ public class Query2 {
                     if ((String) event.get("sid") == currentSid) {
                         currentSid = "";
                         lastPlayerSid = "";
-                        System.out.println("THE BALL WENT OFF COURT: sid: " + (String) event.get("sid") + " ts: " + (long) event.get("ts") + " x,y,z: " + (Double) event.get("x") +" , " + (Double) event.get("y") + " , " + (Double) event.get("z"));
+                        //System.out.println("THE BALL WENT OFF COURT: sid: " + (String) event.get("sid") + " ts: " + (long) event.get("ts") + " x,y,z: " + (Double) event.get("x") +" , " + (Double) event.get("y") + " , " + (Double) event.get("z"));
                         //send event
                         ShotEvent event1 = new ShotEvent(
                             (String) event.get("sid"),

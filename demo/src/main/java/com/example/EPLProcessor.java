@@ -14,20 +14,20 @@
         private EPAdministrator admin;
         private long eventCount = 0;
         private long startTime = System.currentTimeMillis();
-        private final BlockingQueue<String> logQueue = new LinkedBlockingQueue<>();
-        private final AsyncLogger logger;
+        //private final BlockingQueue<String> logQueue = new LinkedBlockingQueue<>();
+        //private final AsyncLogger logger;
 
 
 
         public EPLProcessor(EPAdministrator admin) {
             this.admin = admin;
-            this.logger = new AsyncLogger("query1.txt", logQueue);
+            //this.logger = new AsyncLogger("query1.txt", logQueue);
         }
 
         public void startListening(EPServiceProvider epService) {
             
             // Register the listener
-            query1 processor = new query1(epService.getEPAdministrator(), logQueue);    
+            query1 processor = new query1(epService.getEPAdministrator());    
             processor.startListening(epService);
 
             Configuration config = new Configuration();

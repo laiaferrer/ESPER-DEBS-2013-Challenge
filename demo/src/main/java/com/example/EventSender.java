@@ -29,10 +29,10 @@ public class EventSender {
 
         epService = UDFRegistration.registerUDF();
 
-        new Query3(epService.getEPAdministrator()).startListening(epService);
-        new Query4(epService.getEPAdministrator()).startListening(epService);
-        new Query4_2(epService.getEPAdministrator()).startListening(epService);
-        new Query2(epService.getEPAdministrator()).startListening(epService);
+        //new Query3(epService.getEPAdministrator()).startListening(epService);
+        //new Query4(epService.getEPAdministrator()).startListening(epService);
+        //new Query4_2(epService.getEPAdministrator()).startListening(epService);
+        //new Query2(epService.getEPAdministrator()).startListening(epService);
         new ThresholdCalculator(epService.getEPAdministrator()).startListening(epService);
         //new prova(epService.getEPAdministrator()).startListening(epService);
 
@@ -40,6 +40,9 @@ public class EventSender {
         EPRuntime runtime = epService.getEPRuntime();
 
         Map<String, PlayerData> metadata = readMetadata("metadata.txt");
+
+        printMemoryUsage("After reading metadata");
+
 
         Map<String, String> sidToPlayer = new HashMap<>();
         Map<String, String> sidToTeam = new HashMap<>();
@@ -55,8 +58,11 @@ public class EventSender {
             }
         }
 
-        List<SensorEvent> sensorEvents = streamSensorData("data1.txt", sidToPlayer, sidToTeam);
+        List<SensorEvent> sensorEvents = streamSensorData("filtered.csv", sidToPlayer, sidToTeam);
+        printMemoryUsage("After reading sensor events into memory");
         sendAllSensorEventsSingleThread(sensorEvents, runtime);
+        printMemoryUsage("After sending all SensorEvents");
+
     }
 
     private static Map<String, PlayerData> readMetadata(String filePath) {
@@ -84,6 +90,22 @@ public class EventSender {
             e.printStackTrace();
         }
         return metadata;
+    }
+
+    private static void printMemoryUsage(String stage) {
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc();  // optional: suggest garbage collection
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long maxMemory = runtime.maxMemory();
+
+        System.out.println("----- Memory Usage: " + stage + " -----");
+        System.out.printf("Used: %.2f MB%n", usedMemory / (1024.0 * 1024));
+        System.out.printf("Free: %.2f MB%n", freeMemory / (1024.0 * 1024));
+        System.out.printf("Total: %.2f MB%n", totalMemory / (1024.0 * 1024));
+        System.out.printf("Max: %.2f MB%n", maxMemory / (1024.0 * 1024));
+        System.out.println("----------------------------------------");
     }
 
     private static List<SensorEvent> streamSensorData(String filePath, Map<String, String> sidToPlayer, Map<String, String> sidToTeam) {
