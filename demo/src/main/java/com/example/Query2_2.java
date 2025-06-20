@@ -52,8 +52,8 @@ public class Query2_2 {
                         int hits = 1;
 
                         if (prev_ts != ts) {
-                            //System.out.println("EVENTRS RIGHT NOW IN THE WINDOW: PREV_TS: " + prev_ts + " TS: " + ts);
-                            //System.out.println("PREV_PLAYER_ID: " + prev_playerId + " PLAYER_ID: " + playerId);
+                            System.out.println("EVENTRS RIGHT NOW IN THE WINDOW: PREV_TS: " + prev_ts + " TS: " + ts);
+                            System.out.println("PREV_PLAYER_ID: " + prev_playerId + " PLAYER_ID: " + playerId);
                             if (prev_playerId != "off") {
                                 /*if (playerId != "off") {
                                     if (playerPossessionMap.containsKey(playerId)) {
@@ -71,10 +71,11 @@ public class Query2_2 {
                                     posession = new PlayerPosession(prev_ts, prev_playerId, 0, 0, prev_teamId);
                                 }
                             
-                                long time = (long) event.get("ts") - (long) event.get("prev_ts");
+                                long time = ts - prev_ts;
                                 posession.setDuration(posession.getDuration() + time);
                                 //System.out.println("HITS: " + posession.getHits());
                                 posession.setHits(posession.getHits() + 1);
+                                posession.setTs(prev_ts);
                                 playerPossessionMap.put(prev_playerId, posession);
 
 

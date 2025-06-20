@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.RunningStatistics;
 import com.espertech.esper.client.*;
+import com.espertech.esper.client.time.CurrentTimeEvent;
 
 public class EventSender {
 
@@ -17,6 +18,7 @@ public class EventSender {
 
     public static void main(String[] args) {
         Configuration config = new Configuration();
+        config.getEngineDefaults().getThreading().setInternalTimerEnabled(false); // ⬅️ Use external time
         config.addEventType("SensorEvent", SensorEvent.class.getName());
         config.addEventType("BallEvent", BallEvent.class.getName());
         config.addEventType("ShotEvent", ShotEvent.class.getName());
@@ -58,9 +60,9 @@ public class EventSender {
             }
         }
 
-        List<SensorEvent> sensorEvents = streamSensorData("filtered.csv", sidToPlayer, sidToTeam);
+        List<SensorEvent> sensorEvents = streamSensorData("data2.txt", sidToPlayer, sidToTeam);
         printMemoryUsage("After reading sensor events into memory");
-        sendAllSensorEventsSingleThread(sensorEvents, runtime);
+        sendAllSensorEventsSingleThread(sensorEvents, runtime, epService);
         printMemoryUsage("After sending all SensorEvents");
 
     }
@@ -172,15 +174,18 @@ public class EventSender {
         return sensorEvents;
     }
 
-    private static void sendAllSensorEventsSingleThread(List<SensorEvent> events, EPRuntime runtime) {
+    private static void sendAllSensorEventsSingleThread(List<SensorEvent> events, EPRuntime runtime, EPServiceProvider epService) {
 
         System.out.printf("Sending %d events using a single thread...\n", events.size());
         long startTime = System.nanoTime();
+        int eventsSent = 0;
         
         for (SensorEvent event : events) {
             if (ballIds.contains(event.getSid())) {
                 BallEvent ball = new BallEvent(event.getSid(), event.getTs(), event.getX(), event.getY(), event.getZ(), event.getV(), event.getA(), event.getVx(), event.getVy(), event.getVz(), event.getAx(), event.getAy(), event.getAz());
                 runtime.sendEvent(ball);
+                epService.getEPRuntime().sendEvent(new CurrentTimeEvent(event.getTs()/ 1_000_000));
+                ++eventsSent;
             }
             else {
                 String playerId = event.getPlayer_id();
@@ -189,9 +194,12 @@ public class EventSender {
                 if (PlayerIntensity.containsKey(playerId)) {
                     String pastIntensity = PlayerIntensity.get(playerId);
                     //resend event if the intensity changes
+                    //System.out.println("PAST: " + pastIntensity + " NOW: " + intensity);
                     if (pastIntensity != intensity) {
                         //System.out.println("RESEND EVENT!");
                         runtime.sendEvent(event);
+                        epService.getEPRuntime().sendEvent(new CurrentTimeEvent(event.getTs()/ 1_000_000));
+                        ++eventsSent;
                     }
                 }
 
@@ -199,13 +207,16 @@ public class EventSender {
                 
                 //System.out.println("EVENT SEND! SID: " + event.getSid() + " PLAYER_ID: " + event.getPlayer_id() + " INTENSITY: " + event.getintensity() + " TS: " + event.getTs());
                 runtime.sendEvent(event);
+                ++eventsSent;
+                epService.getEPRuntime().sendEvent(new CurrentTimeEvent(event.getTs()/ 1_000_000));
+
             }
         }
 
         long endTime = System.nanoTime();
         double duration = (endTime - startTime) / 1e9;
         System.out.printf("Sent %d SensorEvents in %.3f seconds (%.2f events/sec)%n",
-                events.size(), duration, events.size() / duration);
+                eventsSent, duration, eventsSent / duration);
     }
 
     private static boolean inside_court(double x, double y) {

@@ -22,8 +22,10 @@ public class Query3 {
     }
 
     public void startListening(EPServiceProvider epService) {
+        //new Query3_2(epService.getEPAdministrator()).startListening(epService);
+        //new HeatmapVisualization(epService.getEPAdministrator());
+
         new Query3_2(epService.getEPAdministrator(), logQueue).startListening(epService);
-        new HeatmapVisualization(epService.getEPAdministrator());
 
         String contextEPL = "create context PlayerContext partition by player_id from SensorEvent";
         admin.createEPL(contextEPL);
@@ -45,11 +47,13 @@ public class Query3 {
                     Object y = event.get("prev_y");
                     long ts = (Long) event.get("ts");
                     long prev_ts = (Long) event.get("prev_ts");
+                    long tsMillis = ts / 1_000_000;      // Convert from ps to ms
+                    long prevTsMillis = prev_ts / 1_000_000;
 
                     //System.out.println("PLAYER_ID: " + playerId + " TS: " + prev_ts);
 
                     if (x != null && y != null && inside_court((double) x, (double) y)) {
-                        updatePlayerCellTime(playerId, (double) x, (double) y, ts, prev_ts, epService);
+                        updatePlayerCellTime(playerId, (double) x, (double) y, tsMillis, prevTsMillis, epService);
                     }
                 }
             }
@@ -57,7 +61,7 @@ public class Query3 {
     }
 
     private static boolean inside_court(double x, double y) {
-        return x >= 0 && x <= 33941 && y <= 33965 && y >= -33960;
+        return x >= 0 && x <= 52489 && y <= 33965 && y >= -33960;
     }
 
     private void updatePlayerCellTime(String playerId, double x, double y, long ts, long prev_ts, EPServiceProvider epService) {
@@ -75,5 +79,6 @@ public class Query3 {
         long duration = ts - prev_ts;
         HeatMapEvent event = new HeatMapEvent(prev_ts, playerId, x_cell, y_cell, duration);
         epService.getEPRuntime().sendEvent(event);
+        //System.out.println("event send");
     }
 }

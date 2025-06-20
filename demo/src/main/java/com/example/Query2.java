@@ -101,7 +101,7 @@ public class Query2 {
                                         "where (p.x - b.x) * (p.x - b.x) + (p.y - b.y) * (p.y - b.y) + (p.z - b.z) * (p.z - b.z) <= 1000000 " +  
                                         "and b.a >= 55000000 " +
                                         "and b.ts > p.ts " +
-                                        //"and b.x >= 0 and b.x <= 52489 and b.y >= -33960 and b.y <= 33965  " +
+                                        "and b.x >= 0 and b.x <= 52489 and b.y >= -33960 and b.y <= 33965  " +
                                         "order by ts asc " +
                                         "limit 1";
 
@@ -117,6 +117,7 @@ public class Query2 {
                         currentSid = (String) event.get("sid");
                         double x = (double) event.get("x");
                         double y = (double) event.get("y");
+                        long player_ts = (long) event.get("player_ts");
 
                         if(x >= 0 && x <= 52489 && y >= -33960 && y <= 33965) {
                             
@@ -139,7 +140,7 @@ public class Query2 {
                             (String) event.get("team_id")
                             );
                             epService.getEPRuntime().sendEvent(event1);
-                            //System.out.println("EVENT SENDED WITH BALLTS: " + (long) event.get("ts") + " BALLSID: " + (String) event.get("sid") + " PLAYERTS: " + (long) event.get("player_ts"));
+                            System.out.println("EVENT SENDED WITH BALLTS: " + (long) event.get("ts") + " PLAYER_TS: " + player_ts + " BALLSID: " + (String) event.get("sid") + " PLAYERTS: " + (long) event.get("player_ts"));
                         } else {
                             //System.out.println("A shot has been detected but not sended because it is off court");
                         }
