@@ -1,3 +1,4 @@
+
     package com.example;
 
     import java.util.concurrent.BlockingQueue;
@@ -6,7 +7,7 @@
     import com.RunningStatistics;
     import com.espertech.esper.client.*;
     import com.example.EventSender;
-    import com.example.RunningStatisticsEvent;
+    import com.example.RunningStatisticsEvent;  
  
     //this code solves Query 1
 

@@ -26,15 +26,15 @@ public class EventSender {
 
         EPServiceProvider epService = EPServiceProviderManager.getDefaultProvider(config);
 
-        EPLProcessor processor = new EPLProcessor(epService.getEPAdministrator());
-        processor.startListening(epService);
+        //EPLProcessor processor = new EPLProcessor(epService.getEPAdministrator());
+        //processor.startListening(epService);
 
         epService = UDFRegistration.registerUDF();
 
         //new Query3(epService.getEPAdministrator()).startListening(epService);
         //new Query4(epService.getEPAdministrator()).startListening(epService);
         //new Query4_2(epService.getEPAdministrator()).startListening(epService);
-        //new Query2(epService.getEPAdministrator()).startListening(epService);
+        new Query2(epService.getEPAdministrator()).startListening(epService);
         new ThresholdCalculator(epService.getEPAdministrator()).startListening(epService);
         //new prova(epService.getEPAdministrator()).startListening(epService);
 
@@ -60,7 +60,7 @@ public class EventSender {
             }
         }
 
-        List<SensorEvent> sensorEvents = streamSensorData("data2.txt", sidToPlayer, sidToTeam);
+        List<SensorEvent> sensorEvents = streamSensorData("filtered.csv", sidToPlayer, sidToTeam);
         printMemoryUsage("After reading sensor events into memory");
         sendAllSensorEventsSingleThread(sensorEvents, runtime, epService);
         printMemoryUsage("After sending all SensorEvents");

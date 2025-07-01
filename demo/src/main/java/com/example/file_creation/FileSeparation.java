@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class FileSeparation {
     public static void main(String[] args) {
-        String inputFile = "full-game.txt"; // Adjust file path
+        String inputFile = "filtered.csv"; // Adjust file path
         Map<String, BufferedWriter> writers = new HashMap<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(inputFile))) {
